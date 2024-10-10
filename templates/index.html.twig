@@ -1,0 +1,48 @@
+{% extends 'base.html.twig' %}
+
+{% block title %} Liste des Articles {% endblock %}
+
+{% block body %}
+    {% if articles %}
+        <h1>Liste des Articles</h1>
+        <table id="articles" class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>Prix</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for article in articles %}
+                    <tr>
+                        <td>{{ article.nom }}</td>
+                        <td>{{ article.prix }}</td>
+                        <td>
+                <a href="/article/{{ article.id }}" class="btn btn-dark">Détails</a>
+<a href="/article/edit/{{ article.id }}" class="btn btndark">Modifier</a>
+<a href="#" class="btn btn-danger"
+   onclick="if(confirm('Etes-vous sûr de supprimer cet article?')) { 
+       fetch('/article/delete/{{ article.id }}', {
+           method: 'DELETE',
+           headers: {
+               'X-Requested-With': 'XMLHttpRequest'
+           }
+       }).then(response => {
+           if (response.ok) {
+               window.location.reload(); // Recharge la page pour mettre à jour la liste
+           } else {
+               alert('Erreur lors de la suppression de l\'article');
+           }
+       }); 
+   }">Supprimer</a>
+</td>
+                    </tr>
+                  
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Aucun article trouvé</p>
+    {% endif %}
+{% endblock %}
