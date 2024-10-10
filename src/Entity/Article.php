@@ -30,6 +30,11 @@ class Article
         message: "Le prix d’un article ne doit pas être égal à 0."
     )]
     private ?string $prix = null;
+/**
+ * @ORM\ManyToOne(targetEntity="App\Entity\Category", inversedBy="articles")
+ * @ORM\JoinColumn(nullable=false)
+ */
+ private $category;
 
     #[ORM\ManyToOne(inversedBy: 'article')]
     private ?Category $categories = null;
@@ -62,15 +67,13 @@ class Article
         return $this;
     }
 
-    public function getCategories(): ?Category
+    public function getCategory(): ?Category
     {
-        return $this->categories;
+    return $this->category;
     }
-
-    public function setCategories(?Category $categories): static
+    public function setCategory(?Category $category): self
     {
-        $this->categories = $categories;
-
-        return $this;
+    $this->category = $category;
+    return $this;
     }
 }

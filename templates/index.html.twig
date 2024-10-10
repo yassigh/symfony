@@ -4,44 +4,42 @@
 
 {% block body %}
     {% if articles %}
-        <h1>Liste des Articles</h1>
-        <table id="articles" class="table table-striped">
-            <thead>
+       
+     <div class="container mt-5"> {# Utiliser un conteneur Bootstrap pour la mise en page #}
+    <h1 class="text-center mb-4">Liste des Articles</h1> {# Titre centré #}
+    <table id="articles" class="table table-striped table-bordered text-center"> {# Ajouter 'table-bordered' pour les bordures et 'text-center' pour centrer le texte #}
+        <thead class="table-light"> {# Utiliser une classe pour un en-tête léger #}
+            <tr>
+                <th>Nom</th>
+                <th>Prix</th>
+                <th>Catégorie</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for article in articles %}
                 <tr>
-                    <th>Nom</th>
-                    <th>Prix</th>
-                    <th>Actions</th>
+                    <td>{{ article.nom }}</td>
+                    <td>{{ article.prix }}</td>
+                    <td>
+                        {% if article.category %}
+                            {{ article.category.titre }} {# Affichage du titre de la catégorie #}
+                        {% else %}
+                            Aucune catégorie
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="/article/{{ article.id }}" class="btn btn-primary">Détails</a> 
+                        <a href="/article/edit/{{ article.id }}" class="btn btn-success">Modifier</a> 
+                        <a href="/article/delete/{{ article.id }}" class="btn btn-danger"
+                           onclick="return confirm('Etes-vous sûr de supprimer cet article?');">Supprimer</a>
+                    </td>
                 </tr>
-            </thead>
-            <tbody>
-                {% for article in articles %}
-                    <tr>
-                        <td>{{ article.nom }}</td>
-                        <td>{{ article.prix }}</td>
-                        <td>
-                <a href="/article/{{ article.id }}" class="btn btn-dark">Détails</a>
-<a href="/article/edit/{{ article.id }}" class="btn btndark">Modifier</a>
-<a href="#" class="btn btn-danger"
-   onclick="if(confirm('Etes-vous sûr de supprimer cet article?')) { 
-       fetch('/article/delete/{{ article.id }}', {
-           method: 'DELETE',
-           headers: {
-               'X-Requested-With': 'XMLHttpRequest'
-           }
-       }).then(response => {
-           if (response.ok) {
-               window.location.reload(); // Recharge la page pour mettre à jour la liste
-           } else {
-               alert('Erreur lors de la suppression de l\'article');
-           }
-       }); 
-   }">Supprimer</a>
-</td>
-                    </tr>
-                  
-                {% endfor %}
-            </tbody>
-        </table>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
     {% else %}
         <p>Aucun article trouvé</p>
     {% endif %}

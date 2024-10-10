@@ -11,7 +11,8 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use App\Form\ArticleType;
-
+use App\Entity\Category;
+use App\Form\CategoryType;
 class IndexController extends AbstractController
 {
     /**
@@ -60,7 +61,7 @@ class IndexController extends AbstractController
             'article' => $article,
         ]);
     }
-  /**
+/**
  * @Route("/article/new", name="new_article", methods={"GET", "POST"})
  */
 public function new(Request $request, ManagerRegistry $doctrine): Response
@@ -84,7 +85,8 @@ public function new(Request $request, ManagerRegistry $doctrine): Response
         $entityManager->persist($article);
         $entityManager->flush();
 
-        // Rediriger vers la liste des articles
+        // Rediriger vers la liste des articles avec un message de succès
+        $this->addFlash('success', 'L\'article a été créé avec succès !');
         return $this->redirectToRoute('article_list');
     }
 
@@ -93,6 +95,7 @@ public function new(Request $request, ManagerRegistry $doctrine): Response
         'form' => $form->createView(),
     ]);
 }
+
 
      /**
      * @Route("/article/edit/{id}", name="edit_article", methods={"GET", "POST"})
@@ -150,4 +153,32 @@ public function delete(Request $request, $id, ManagerRegistry $doctrine): Respon
     // Rediriger vers la liste des articles
     return $this->redirectToRoute('article_list');
 }
+/**
+ * @Route("/category/newCat", name="new_category", methods={"GET", "POST"})
+ */
+public function newCategory(Request $request, ManagerRegistry $doctrine): Response
+{
+    $category = new Category();
+    $form = $this->createForm(CategoryType::class, $category);
+    $form->handleRequest($request);
+
+    // Vérifier si le formulaire est soumis et valide
+    if ($form->isSubmitted() && $form->isValid()) {
+        // Récupérer les données du formulaire
+        $category = $form->getData();
+
+        // Utiliser l'injection de dépendance pour obtenir l'EntityManager
+        $entityManager = $doctrine->getManager();
+        $entityManager->persist($category);
+        $entityManager->flush();
+
+        // Rediriger ou faire un retour après la création
+        return $this->redirectToRoute('article_list'); // ou une autre route selon votre besoin
+    }
+
+    return $this->render('articles/NewCategory.html.twig', [
+        'form' => $form->createView(),
+    ]);
+}
+
 }

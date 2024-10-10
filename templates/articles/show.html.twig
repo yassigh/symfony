@@ -3,6 +3,12 @@
 {% block body %}
 <h1>{{ article.nom }}</h1>
 <p>{{ article.prix }}</p>
+
+<p>{% if article.category %}
+                            {{ article.category.titre }} {# Affichage du titre de la catégorie #}
+                        {% else %}
+                            Aucune catégorie
+                        {% endif %}</p>
 <hr>
 <a href="/">Retour</a>
 {% endblock %}
