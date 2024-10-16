@@ -1,31 +1,38 @@
-# config/routes/routes.yaml
-
-article_list:
+homepage:
     path: /
     controller: App\Controller\IndexController::home
-    methods: GET
+
+article_save:
+    path: /article/save
+    controller: App\Controller\IndexController::save
 
 new_article:
     path: /article/new
     controller: App\Controller\IndexController::new
-    methods: ['GET', 'POST']
-
 
 article_show:
     path: /article/{id}
     controller: App\Controller\IndexController::show
-    methods: ['GET']
 
 edit_article:
     path: /article/edit/{id}
     controller: App\Controller\IndexController::edit
-    methods: ['GET', 'POST']
 
 delete_article:
     path: /article/delete/{id}
     controller: App\Controller\IndexController::delete
-    methods: ['DELETE']
+    methods: ['POST']
+
 new_category:
-    path: /category/new
+    path: /category/newCat
     controller: App\Controller\IndexController::newCategory
-    methods: ['GET', 'POST']
+
+# Route pour la recherche d'articles par catégorie
+article_par_cat:
+    path: /art_cat/
+    controller: App\Controller\IndexController::articlesParCategorie
+
+# Route pour la recherche d'articles par prix
+article_par_prix:
+    path: /art_prix/
+    controller: App\Controller\IndexController::articlesParPrix

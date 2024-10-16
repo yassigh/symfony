@@ -1,35 +1,30 @@
 <?php
-
 namespace App\Entity;
 
-use App\Repository\CategoryRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity(repositoryClass: CategoryRepository::class)]
+#[ORM\Entity(repositoryClass: 'App\Repository\CategoryRepository')]
 class Category
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column]
+    #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $titre = null;
+    #[ORM\Column(type: 'string', length: 255)]
+    private string $titre;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(type: 'text', nullable: true)]
     private ?string $description = null;
 
-    /**
-     * @var Collection<int, Article>
-     */
-    #[ORM\OneToMany(targetEntity: Article::class, mappedBy: 'categories')]
-    private Collection $article;
+    #[ORM\OneToMany(mappedBy: 'category', targetEntity: 'App\Entity\Article')]
+    private Collection $articles;
 
     public function __construct()
     {
-        $this->article = new ArrayCollection();
+        $this->articles = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -42,10 +37,9 @@ class Category
         return $this->titre;
     }
 
-    public function setTitre(string $titre): static
+    public function setTitre(string $titre): self
     {
         $this->titre = $titre;
-
         return $this;
     }
 
@@ -54,37 +48,36 @@ class Category
         return $this->description;
     }
 
-    public function setDescription(string $description): static
+    public function setDescription(?string $description): self
     {
         $this->description = $description;
-
         return $this;
     }
 
     /**
-     * @return Collection<int, Article>
+     * @return Collection|Article[]
      */
-    public function getArticle(): Collection
+    public function getArticles(): Collection
     {
-        return $this->article;
+        return $this->articles;
     }
 
-    public function addArticle(Article $article): static
+    public function addArticle(Article $article): self
     {
-        if (!$this->article->contains($article)) {
-            $this->article->add($article);
-            $article->setCategories($this);
+        if (!$this->articles->contains($article)) {
+            $this->articles[] = $article;
+            $article->setCategory($this);
         }
 
         return $this;
     }
 
-    public function removeArticle(Article $article): static
+    public function removeArticle(Article $article): self
     {
-        if ($this->article->removeElement($article)) {
+        if ($this->articles->removeElement($article)) {
             // set the owning side to null (unless already changed)
-            if ($article->getCategories() === $this) {
-                $article->setCategories(null);
+            if ($article->getCategory() === $this) {
+                $article->setCategory(null);
             }
         }
 

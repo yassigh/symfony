@@ -2,44 +2,38 @@
 
 namespace App\Entity;
 
-use App\Repository\ArticleRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
-#[ORM\Entity(repositoryClass: ArticleRepository::class)]
+#[ORM\Entity(repositoryClass: "App\Repository\ArticleRepository")]
 class Article
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column]
+    #[ORM\Column(type: Types::INTEGER)]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(type: Types::STRING, length: 255)]
     #[Assert\Length(
         min: 5,
         max: 50,
         minMessage: "Le nom d'un article doit comporter au moins {{ limit }} caractères.",
         maxMessage: "Le nom d'un article doit comporter au plus {{ limit }} caractères."
     )]
-    private ?string $nom = null;
+    private string $nom;
 
-    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 0)]
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
     #[Assert\NotEqualTo(
         value: 0,
         message: "Le prix d’un article ne doit pas être égal à 0."
     )]
-    private ?string $prix = null;
-/**
- * @ORM\ManyToOne(targetEntity="App\Entity\Category", inversedBy="articles")
- * @ORM\JoinColumn(nullable=false)
- */
- private $category;
+    private string $prix;
 
-    #[ORM\ManyToOne(inversedBy: 'article')]
-    private ?Category $categories = null;
+    #[ORM\ManyToOne(targetEntity: "App\Entity\Category", inversedBy: "articles")]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Category $category = null;
 
-    // Getters et Setters
     public function getId(): ?int
     {
         return $this->id;
@@ -50,9 +44,10 @@ class Article
         return $this->nom;
     }
 
-    public function setNom(string $nom): static
+    public function setNom(string $nom): self
     {
         $this->nom = $nom;
+
         return $this;
     }
 
@@ -61,19 +56,22 @@ class Article
         return $this->prix;
     }
 
-    public function setPrix(string $prix): static
+    public function setPrix(string $prix): self
     {
         $this->prix = $prix;
+
         return $this;
     }
 
     public function getCategory(): ?Category
     {
-    return $this->category;
+        return $this->category;
     }
+
     public function setCategory(?Category $category): self
     {
-    $this->category = $category;
-    return $this;
+        $this->category = $category;
+
+        return $this;
     }
 }

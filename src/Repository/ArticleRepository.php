@@ -6,9 +6,6 @@ use App\Entity\Article;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
-/**
- * @extends ServiceEntityRepository<Article>
- */
 class ArticleRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
@@ -16,28 +13,24 @@ class ArticleRepository extends ServiceEntityRepository
         parent::__construct($registry, Article::class);
     }
 
-    //    /**
-    //     * @return Article[] Returns an array of Article objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('a')
-    //            ->andWhere('a.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('a.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
-
-    //    public function findOneBySomeField($value): ?Article
-    //    {
-    //        return $this->createQueryBuilder('a')
-    //            ->andWhere('a.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+    /**
+     * Trouve les articles dans une plage de prix spécifiée
+     *
+     * @param int|null $minValue Valeur minimale du prix
+     * @param int|null $maxValue Valeur maximale du prix
+     * @return Article[] Liste des articles correspondant aux critères
+     */
+    public function findByPriceRange($minValue, $maxValue)
+    {
+        // Construction de la requête avec QueryBuilder
+        return $this->createQueryBuilder('a')
+            ->andWhere('a.prix >= :minVal')
+            ->setParameter('minVal', $minValue)
+            ->andWhere('a.prix <= :maxVal')
+            ->setParameter('maxVal', $maxValue)
+            ->orderBy('a.id', 'ASC')  // Optionnel: Tri par ID
+            ->setMaxResults(10)  // Limite les résultats à 10
+            ->getQuery()
+            ->getResult();
+    }
 }

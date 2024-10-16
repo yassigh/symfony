@@ -3,182 +3,206 @@
 namespace App\Controller;
 
 use App\Entity\Article;
-use Doctrine\Persistence\ManagerRegistry;
+use App\Entity\Category;
+use App\Entity\CategorySearch; // Entité pour la recherche de catégorie
+use App\Entity\PriceSearch; // Entité pour la recherche de prix
+use App\Form\ArticleType;
+use App\Form\CategoryType;
+use App\Entity\PropertySearch;
+use App\Form\PropertySearchType;
+use App\Form\CategorySearchType; // Formulaire pour la recherche de catégorie
+use App\Form\PriceSearchType; // Formulaire pour la recherche par prix
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Form\Extension\Core\Type\TextType;
-use Symfony\Component\Form\Extension\Core\Type\SubmitType;
-use App\Form\ArticleType;
-use App\Entity\Category;
-use App\Form\CategoryType;
+
 class IndexController extends AbstractController
 {
-    /**
-     * @Route("/", name="article_list", methods={"GET"})
-     */
-    public function home(ManagerRegistry $doctrine): Response
-    {
-        // Récupérer tous les articles de la table "article" de la base de données
-        $articles = $doctrine->getRepository(Article::class)->findAll();
+    private EntityManagerInterface $entityManager;
 
-        // Transmettre les articles à la vue 'index.html.twig'
-        return $this->render('index.html.twig', ['articles' => $articles]);
+    public function __construct(EntityManagerInterface $entityManager)
+    {
+        $this->entityManager = $entityManager;
     }
 
-    /**
-     * @Route("/article/save", name="save_article", methods={"GET"})
-     */
-    public function save(ManagerRegistry $doctrine): Response
+    #[Route('/', name: 'homepage')]
+    public function home(Request $request): Response
     {
-        $entityManager = $doctrine->getManager();
+        $propertySearch = new PropertySearch();
+        $form = $this->createForm(PropertySearchType::class, $propertySearch);
+        $form->handleRequest($request);
 
+        $articles = [];
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $nom = $propertySearch->getNom();
+            if ($nom != "") {
+                $articles = $this->entityManager->getRepository(Article::class)->findBy(['nom' => $nom]);
+            } else {
+                $articles = $this->entityManager->getRepository(Article::class)->findAll();
+            }
+        }
+
+        return $this->render('articles/index.html.twig', [
+            'form' => $form->createView(),
+            'articles' => $articles,
+        ]);
+    }
+
+    #[Route('/article/save', name: 'article_save', methods: ['GET'])]
+    public function save(): Response
+    {
         $article = new Article();
         $article->setNom('Article 1');
         $article->setPrix(1000);
-
-        $entityManager->persist($article);
-        $entityManager->flush();
+        $this->entityManager->persist($article);
+        $this->entityManager->flush();
 
         return new Response('Article enregistré avec id ' . $article->getId());
     }
- /**
-     * @Route("/article/{id}", name="article_show", methods={"GET"})
-     */
-    public function show($id, ManagerRegistry $doctrine): Response
-    {
-        // Utiliser le ManagerRegistry pour obtenir le repository de l'article
-        $article = $doctrine->getRepository(Article::class)->find($id);
 
-        // Vérifiez si l'article existe
-        if (!$article) {
-            throw $this->createNotFoundException('Article non trouvé');
+    #[Route('/article/new', name: 'new_article', methods: ['GET', 'POST'])]
+    public function new(Request $request): Response
+    {
+        $article = new Article();
+        $form = $this->createForm(ArticleType::class, $article);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $category = $article->getCategory();
+            if (!$category) {
+                throw $this->createNotFoundException('Catégorie non trouvée.');
+            }
+
+            $this->entityManager->persist($article);
+            $this->entityManager->flush();
+
+            return $this->redirectToRoute('homepage');
         }
 
-        // Renvoyer la vue avec l'article
+        return $this->render('articles/new.html.twig', [
+            'form' => $form->createView(),
+        ]);
+    }
+
+    #[Route('/category/newCat', name: 'new_category', methods: ['GET', 'POST'])]
+    public function newCategory(Request $request): Response
+    {
+        $category = new Category();
+        $form = $this->createForm(CategoryType::class, $category);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $this->entityManager->persist($category);
+            $this->entityManager->flush();
+
+            return $this->redirectToRoute('homepage');
+        }
+
+        return $this->render('articles/newCategory.html.twig', [
+            'form' => $form->createView(),
+        ]);
+    }
+
+    #[Route('/article/{id}', name: 'article_show', methods: ['GET'])]
+    public function show(int $id): Response
+    {
+        $article = $this->entityManager->getRepository(Article::class)->find($id);
+        if (!$article) {
+            throw $this->createNotFoundException('Article non trouvé.');
+        }
+
         return $this->render('articles/show.html.twig', [
             'article' => $article,
         ]);
     }
-/**
- * @Route("/article/new", name="new_article", methods={"GET", "POST"})
- */
-public function new(Request $request, ManagerRegistry $doctrine): Response
-{
-    // Créer une nouvelle instance d'Article
-    $article = new Article();
 
-    // Créer le formulaire associé à l'entité Article
-    $form = $this->createForm(ArticleType::class, $article);
-
-    // Gérer la requête du formulaire
-    $form->handleRequest($request);
-
-    // Si le formulaire est soumis et valide
-    if ($form->isSubmitted() && $form->isValid()) {
-        // Récupérer les données soumises par le formulaire
-        $article = $form->getData();
-
-        // Sauvegarder les données dans la base de données
-        $entityManager = $doctrine->getManager();
-        $entityManager->persist($article);
-        $entityManager->flush();
-
-        // Rediriger vers la liste des articles avec un message de succès
-        $this->addFlash('success', 'L\'article a été créé avec succès !');
-        return $this->redirectToRoute('article_list');
-    }
-
-    // Rendre le template du formulaire
-    return $this->render('articles/new.html.twig', [
-        'form' => $form->createView(),
-    ]);
-}
-
-
-     /**
-     * @Route("/article/edit/{id}", name="edit_article", methods={"GET", "POST"})
-     */
-    public function edit(Request $request, $id, ManagerRegistry $doctrine): Response
+    #[Route('/article/edit/{id}', name: 'edit_article', methods: ['GET', 'POST'])]
+    public function edit(Request $request, int $id): Response
     {
-        // Utilisation de l'injection de dépendances pour accéder au repository
-        $article = $doctrine->getRepository(Article::class)->find($id);
-
-        // Vérifiez si l'article a été trouvé
+        $article = $this->entityManager->getRepository(Article::class)->find($id);
         if (!$article) {
-            throw $this->createNotFoundException("L'article avec l'ID $id n'existe pas.");
+            throw $this->createNotFoundException('Article non trouvé.');
         }
 
-        // Créer le formulaire en liant l'entité Article
         $form = $this->createForm(ArticleType::class, $article);
-
-        // Gérer la requête
         $form->handleRequest($request);
 
-        // Si le formulaire est soumis et valide
         if ($form->isSubmitted() && $form->isValid()) {
-            // Sauvegarder les modifications dans la base de données
-            $entityManager = $doctrine->getManager();
-            $entityManager->persist($article);
-            $entityManager->flush();
+            $this->entityManager->flush();
 
-            // Rediriger vers une autre page après la soumission
-            return $this->redirectToRoute('article_list');
+            return $this->redirectToRoute('homepage');
         }
 
-        // Rendre la vue du formulaire
         return $this->render('articles/edit.html.twig', [
             'form' => $form->createView(),
         ]);
     }
 
- /**
- * @Route("/article/delete/{id}", name="delete_article", methods={"DELETE"})
- */
-public function delete(Request $request, $id, ManagerRegistry $doctrine): Response {
-    // Récupérer l'article
-    $article = $doctrine->getRepository(Article::class)->find($id);
+    #[Route('/article/delete/{id}', name: 'delete_article', methods: ['POST'])]
+    public function delete(Request $request, int $id): Response
+    {
+        $article = $this->entityManager->getRepository(Article::class)->find($id);
+        if (!$article) {
+            throw $this->createNotFoundException('Article non trouvé.');
+        }
 
-    // Vérifiez si l'article existe
-    if (!$article) {
-        throw $this->createNotFoundException('Article non trouvé');
+        if ($this->isCsrfTokenValid('delete' . $article->getId(), $request->request->get('_token'))) {
+            $this->entityManager->remove($article);
+            $this->entityManager->flush();
+        }
+
+        return $this->redirectToRoute('homepage');
     }
 
-    // Supprimer l'article
-    $entityManager = $doctrine->getManager();
-    $entityManager->remove($article);
-    $entityManager->flush();
+    /**
+     * @Route("/art_cat/", name="article_par_cat", methods={"GET", "POST"})
+     */
+    public function articlesParCategorie(Request $request): Response
+    {
+        $categorySearch = new CategorySearch();
+        $form = $this->createForm(CategorySearchType::class, $categorySearch);
+        $form->handleRequest($request);
 
-    // Rediriger vers la liste des articles
-    return $this->redirectToRoute('article_list');
-}
-/**
- * @Route("/category/newCat", name="new_category", methods={"GET", "POST"})
- */
-public function newCategory(Request $request, ManagerRegistry $doctrine): Response
-{
-    $category = new Category();
-    $form = $this->createForm(CategoryType::class, $category);
-    $form->handleRequest($request);
+        $articles = [];
 
-    // Vérifier si le formulaire est soumis et valide
-    if ($form->isSubmitted() && $form->isValid()) {
-        // Récupérer les données du formulaire
-        $category = $form->getData();
+        if ($form->isSubmitted() && $form->isValid()) {
+            $category = $categorySearch->getCategory();
+            if ($category) {
+                $articles = $category->getArticles(); // On récupère les articles associés à la catégorie
+            } else {
+                $articles = $this->entityManager->getRepository(Article::class)->findAll(); // Si aucune catégorie n'est sélectionnée
+            }
+        }
 
-        // Utiliser l'injection de dépendance pour obtenir l'EntityManager
-        $entityManager = $doctrine->getManager();
-        $entityManager->persist($category);
-        $entityManager->flush();
-
-        // Rediriger ou faire un retour après la création
-        return $this->redirectToRoute('article_list'); // ou une autre route selon votre besoin
+        return $this->render('articles/articlesParCategorie.html.twig', [
+            'form' => $form->createView(),
+            'articles' => $articles,
+        ]);
     }
 
-    return $this->render('articles/NewCategory.html.twig', [
-        'form' => $form->createView(),
-    ]);
-}
+    /**
+     * @Route("/art_prix/", name="article_par_prix", methods={"GET", "POST"})
+     */
+    public function articlesParPrix(Request $request): Response
+    {
+        $priceSearch = new PriceSearch();
+        $form = $this->createForm(PriceSearchType::class, $priceSearch);
+        $form->handleRequest($request);
 
+        $articles = [];
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $minPrice = $priceSearch->getMinPrice();
+            $maxPrice = $priceSearch->getMaxPrice();
+            $articles = $this->entityManager->getRepository(Article::class)->findByPriceRange($minPrice, $maxPrice);
+        }
+
+        return $this->render('articles/articlesParPrix.html.twig', [
+            'form' => $form->createView(),
+            'articles' => $articles,
+        ]);
+    }
 }
